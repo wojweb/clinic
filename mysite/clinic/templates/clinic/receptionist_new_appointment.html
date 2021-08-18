@@ -28,27 +28,32 @@
         {%csrf_token%}
 
         <div class="row mt-4">
-            <label for="{{form.doctors.id_for_label}}" class="col-2 col-form-label">Doctor:</label>
+            <label for="{{form.doctor.id_for_label}}" class="col-2 col-form-label">Doctor:</label>
             <div class="col-10">
-                {{ form.doctors }}
+                {{ form.doctor }}
                 {% comment %} <input type="text" readonly class="form-control-plaintext" id="login" value="ewojszy"> {% endcomment %}
             </div>
         </div>
 
         <div class="row mt-2">
-            <label for="{{form.treatments.id_for_label}}" class="col-2 col-form-label">Treatment:</label>
+            <label for="{{form.treatment.id_for_label}}" class="col-2 col-form-label">Treatment:</label>
             <div class="col-10">
-                {{ form.treatments }}
+                {{ form.treatment }}
                 {% comment %} <input type="text" readonly class="form-control-plaintext" id="login" value="ewojszy"> {% endcomment %}
             </div>
         </div>
 
         <div class="row mt-2">
-            <label for="{{form.date.id_for_label}}" class="col-2 col-form-label">Treatment:</label>
+            <label for="{{form.date.id_for_label}}" class="col-2 col-form-label">Date:</label>
             <div class="col-10">
                 {{ form.date }}
                 {% comment %} <input type="text" readonly class="form-control-plaintext" id="login" value="ewojszy"> {% endcomment %}
+                <div id="wrongDate" class="form-text text-danger">
+                            {{message}}
+                </div>
             </div>
+
+
         </div>
 
         <div class="row">

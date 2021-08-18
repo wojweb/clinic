@@ -1,5 +1,6 @@
 from django.shortcuts import render, reverse
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound
+from django.http import (HttpResponse, HttpResponseRedirect, HttpResponseNotFound,
+    HttpResponseBadRequest)
 from django.views import generic
 from .models import Employee, Treatment, Patient, Appointment
 from .forms import (LoginForm, NewEmployeeForm, EmployeeReadOnlyForm,
@@ -29,6 +30,17 @@ not_found_html = """
             </head>
             <body>
                 <h1>Not Found</h1><p>The requested resource was not found on this server.</p>
+            </body>
+            </html>"""
+
+bed_request_html = """
+            <!doctype html>
+            <html lang="en">
+            <head>
+                <title>Not Found</title>
+            </head>
+            <body>
+                <h1>Not Found</h1><p>WARNING!!! Something went wrong.</p>
             </body>
             </html>"""
 
@@ -447,26 +459,54 @@ def receptionist_new_appointment(request, pesel):
         return HttpResponseNotFound(not_found_html)    
 
     if request.method == 'POST':
-        form = NewAppointmentFormTime(request.POST)
-
-        if form.is_valid():
-            print("nie tak jak mysle", sys.stderr)
-
         form = NewAppointmentForm(request.POST)
         if form.is_valid():
-            print("tak jak mysle", sys.stderr)
 
-            # form2 = NewAppointmentFormTime(initial={'doctor': form.cleaned_data['doctor'], ''})
+            time_choices = [(x,y) for (x,y) in Appointment.POSSIBLE_TIMES if x not in
+                [z.time for z in Appointment.objects.filter(date=form.cleaned_data['date'])
+                                                    .filter(doctor=form.cleaned_data['doctor'])]]
 
-            # return render(request, 'clinic/receptionist_new_appointment_time.html', {'form':form, 'pesel':pesel})
+            if len(time_choices) == 0:
+                return render(request, 'clinic/receptionist_new_appointment.html',
+                    {'form':form, 'pesel':pesel, 'message': "This day is full."})
 
-        print("ten tekst powinien sie pojawic", sys.stderr)
+            formTime = NewAppointmentFormTime(time_choices,
+                initial={'doctor': form.cleaned_data['doctor'],
+                'treatment': form.cleaned_data['treatment'],
+                'date': form.cleaned_data['date']})
+
+            return render(request, 'clinic/receptionist_new_appointment_time.html',
+                {'form':formTime, 'pesel':pesel})
 
     form = NewAppointmentForm()
-
-    # print(form, sys.stderr)
-
     return render(request, 'clinic/receptionist_new_appointment.html', {'form':form, 'pesel':pesel})
+
+def receptionist_new_appointment_time(request, pesel):
+    if not request.user.is_authenticated or \
+        not Employee.objects.get(user = request.user).privilege == Employee.Position.RECEPTIONIST:
+        return HttpResponseNotFound(not_found_html)  
+
+    if request.method == 'POST':
+        form = NewAppointmentFormTime(Appointment.POSSIBLE_TIMES, request.POST)
+        if form.is_valid():
+            try:
+                patient = Patient.objects.get(pesel = pesel)
+                appointment = Appointment(patient = patient,
+                    doctor = form.cleaned_data['doctor'],
+                    date = form.cleaned_data['date'],
+                    time = form.cleaned_data['time'],
+                    treatment = form.cleaned_data['treatment'])
+
+                appointment.save()
+                return HttpResponseRedirect(reverse('clinic:patient', args=(pesel,)))
+
+            except(Patient.DoesNotExist):
+                return render(request, 'clinic/receptionist.html', {
+                'form': form,
+                'message': "We have no patient with a given PESEL"
+            })
+
+    return HttpResponseBadRequest(bed_request_html)
 
 class ReceptionistView(generic.DetailView):
     model = Employee

@@ -1,5 +1,6 @@
+import datetime
 from django import forms
-from .models import Employee, Treatment
+from .models import Employee, Treatment, Appointment
 
 class LoginForm(forms.Form):
     login = forms.CharField(max_length = 100, widget=forms.TextInput(
@@ -175,40 +176,38 @@ class DoctorModelChoiceField(forms.ModelChoiceField):
         return '{} {}'.format(obj.name, obj.last_name)
 
 class NewAppointmentForm(forms.Form):
-    doctors = DoctorModelChoiceField(queryset=None, widget = forms.Select(
+    doctor = DoctorModelChoiceField(queryset=None, widget = forms.Select(
         attrs={'class':'form-select'}
     ))
-    treatments = forms.ModelChoiceField(queryset=None, to_field_name='name', widget = forms.Select(
+    treatment = forms.ModelChoiceField(queryset=None, to_field_name='name', widget = forms.Select(
         attrs={'class':'form-select'}
     ))
     date = forms.DateField(widget = forms.DateInput(
-        attrs={'class':'form-control', 'type': 'date'}
+        attrs={'class':'form-control', 'type': 'date', 'aria-describedby':'wrongDate'}
     ))
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['treatments'].queryset = Treatment.objects.all()
-        self.fields['doctors'].queryset = Employee.objects.all().filter(privilege = 'doctor')
+        self.fields['treatment'].queryset = Treatment.objects.all()
+        self.fields['doctor'].queryset = Employee.objects.all().filter(privilege = 'doctor')
 
 
-class NewAppointmentFormTime(NewAppointmentForm):
-    pass
-    # doctor = forms.CharField(max_length = 11, widget=forms.TextInput(
-    #     attrs={'readonly':'True', 'class':'form-control-plaintext'}
-    # ))
-    #   = forms.CharField(max_length = 11, widget=forms.TextInput(
-    #     attrs={'readonly':'True', 'class':'form-control-plaintext'}
-    # ))
-    # date = forms.CharField(max_length = 11, widget=forms.TextInput(
-    #     attrs={'readonly':'True', 'class':'form-control-plaintext'}
-    # ))
+class NewAppointmentFormTime(forms.Form):
+    doctor = DoctorModelChoiceField(queryset=None, widget=forms.TextInput(
+        attrs={'readonly':'True', 'class':'form-control-plaintext'}
+    ))
+    treatment = forms.ModelChoiceField(queryset=None, to_field_name='name', widget=forms.TextInput(
+        attrs={'readonly':'True', 'class':'form-control-plaintext'}
+    ))
+    date = forms.CharField(max_length = 64, widget=forms.TextInput(
+        attrs={'readonly':'True', 'class':'form-control-plaintext'}
+    ))
+    time = forms.ChoiceField(choices = Appointment.POSSIBLE_TIMES, widget = forms.Select(
+            attrs={'class':'form-select'}
+        ))
 
-    # time = forms.ChoiceField(widget = forms.Select(
-    #         attrs={'class':'form-select'}
-    #     ))
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-        
-    
-    # def __init__(self, doctor, treatment, day, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
+    def __init__(self, time_choices, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['treatment'].queryset = Treatment.objects.all()
+        self.fields['doctor'].queryset = Employee.objects.all().filter(privilege = 'doctor')
+        self.fields['time'].choices = time_choices

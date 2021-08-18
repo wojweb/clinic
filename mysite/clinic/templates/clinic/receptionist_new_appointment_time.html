@@ -24,47 +24,61 @@
             <hr>
         </div>
 
-        <form action = "{% url 'clinic:new_appointment' pesel %}"  method="post">
+        <form action = "{% url 'clinic:new_appointment_time' pesel %}"  method="post">
         {%csrf_token%}
-
-        <div class="row mt-4">
-            <label for="{{form.doctors.id_for_label}}" class="col-2 col-form-label">Doctor:</label>
+    
+            <div class="row mt-4">
+            <label for="{{form.doctor.id_for_label}}" class="col-2 col-form-label">Doctor:</label>
             <div class="col-10">
-                {{ form.doctors }}
+                {{ form.doctor }}
                 {% comment %} <input type="text" readonly class="form-control-plaintext" id="login" value="ewojszy"> {% endcomment %}
             </div>
         </div>
 
-        <div class="row mt-2">
-            <label for="{{form.treatments.id_for_label}}" class="col-2 col-form-label">Treatment:</label>
+                <div class="row mt-2">
+            <label for="{{form.treatment.id_for_label}}" class="col-2 col-form-label">Treatment:</label>
             <div class="col-10">
-                {{ form.treatments }}
+                {{ form.treatment }}
                 {% comment %} <input type="text" readonly class="form-control-plaintext" id="login" value="ewojszy"> {% endcomment %}
             </div>
         </div>
 
+
         <div class="row mt-2">
-            <label for="{{form.date.id_for_label}}" class="col-2 col-form-label">Treatment:</label>
+            <label for="{{form.date.id_for_label}}" class="col-2 col-form-label">Date:</label>
             <div class="col-10">
                 {{ form.date }}
                 {% comment %} <input type="text" readonly class="form-control-plaintext" id="login" value="ewojszy"> {% endcomment %}
+            
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <label for="{{form.time.id_for_label}}" class="col-2 col-form-label">Hour:</label>
+            <div class="col-10">
+                {{ form.time }}
             </div>
         </div>
 
         <div class="row">
             <ul class="nav justify-content-end me-0 pe-0">
             <li class="nav-item">
-                <a class="nav-link"  href="{% url 'clinic:patient' pesel %}">Back</a>
+                <a class="nav-link"  href="{% url 'clinic:new_appointment' pesel%}">Back</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link"  href="{% url 'clinic:patient' pesel %}">Cancel</a>
             </li>
             <li class="nav-item">
                 <button type="submit" class="btn btn-link nav-link">Submit</button>
                 {% comment %} <a class="nav-link" href="{% url 'clinic:temp' %}">Save</a> {% endcomment %}
-            </li>
+            </li> 
             </ul>
 
         </div>
 
         </form>
+
+
 
         </div>
 

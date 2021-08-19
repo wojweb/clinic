@@ -6,7 +6,7 @@ from .models import Employee, Treatment, Patient, Appointment
 from .forms import (LoginForm, NewEmployeeForm, EmployeeReadOnlyForm,
     EmployeeForm, ChangePasswordForm, NewTreatmentForm, TreatmentForm, TreatmentReadOnlyForm,
     FindPatientForm, NewPatientForm, PatientReadOnlyForm, PatientForm, NewAppointmentForm, 
-    NewAppointmentFormTime)
+    NewAppointmentFormTime, AppointmentReadOnlyForm)
 import logging
 
 from django.contrib.auth import authenticate, login, logout
@@ -408,9 +408,10 @@ def receptionist_patient(request, pesel):
                                 'lastname':patient.last_name, 'address': patient.adress,
                                 'phone_number':patient.phone_number})
 
-    incoming_appointments = list(Appointment.objects.all().filter(results = ''))
-    past_appointments = list(Appointment.objects.all().exclude(results = ''))
-    print(incoming_appointments, sys.stderr)
+    incoming_appointments = list(Appointment.objects.all().filter(results = '')
+        .filter(patient = patient))
+    past_appointments = list(Appointment.objects.all().exclude(results = '')
+        .filter(patient = patient))
     return render(request, 'clinic/receptionist_patient.html', {'form':form, 'pesel':pesel,
         'incoming_appointments':incoming_appointments, 'past_appointments':past_appointments})
 
@@ -507,6 +508,37 @@ def receptionist_new_appointment_time(request, pesel):
             })
 
     return HttpResponseBadRequest(bed_request_html)
+
+def receptionist_appointment_details(request, appointment_id):
+    if not request.user.is_authenticated or \
+        not Employee.objects.get(user = request.user).privilege == Employee.Position.RECEPTIONIST:
+        return HttpResponseNotFound(not_found_html)  
+    
+    appointment = Appointment.objects.get(id = appointment_id)
+
+    form = AppointmentReadOnlyForm(initial = {
+        'doctor': appointment.doctor,
+        'treatment': appointment.treatment,
+        'date': appointment.date,
+        'time': appointment.get_time_display(),
+        'results': appointment.results
+    })
+    if len(appointment.results) == 0:
+        form.mark_results_as_empty()
+    return render(request, 'clinic/receptionist_appointment.html',
+        {'form':form, 'pesel':appointment.patient.pesel,
+        'appointment_id':appointment.id})
+
+def receptionist_remove_appointment(request, appointment_id):
+    if not request.user.is_authenticated or \
+        not Employee.objects.get(user = request.user).privilege == Employee.Position.RECEPTIONIST:
+        return HttpResponseNotFound(not_found_html)
+        
+    appointment = Appointment.objects.get(id = appointment_id)
+    pesel = appointment.patient.pesel
+    appointment.delete()
+    return HttpResponseRedirect(reverse('clinic:patient', args=(pesel,)))
+
 
 class ReceptionistView(generic.DetailView):
     model = Employee

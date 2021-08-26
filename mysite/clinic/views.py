@@ -6,8 +6,9 @@ from .models import Employee, Treatment, Patient, Appointment
 from .forms import (LoginForm, NewEmployeeForm, EmployeeReadOnlyForm,
     EmployeeForm, ChangePasswordForm, NewTreatmentForm, TreatmentForm, TreatmentReadOnlyForm,
     FindPatientForm, NewPatientForm, PatientReadOnlyForm, PatientForm, NewAppointmentForm, 
-    NewAppointmentFormTime, AppointmentReadOnlyForm)
+    NewAppointmentFormTime, AppointmentReadOnlyForm, AppointmentResultsForm)
 import logging
+import datetime
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -342,9 +343,48 @@ class TreatmentsListView(UserPassesTestMixin, generic.ListView):
     def handle_no_permission(self):
         return HttpResponseNotFound(not_found_html)
 
-class DoctorView(generic.DetailView):
-    model = Employee
-    template_name = 'clinic/doctor.html'
+def doctor_appointment(request, appointment_id):
+    if not request.user.is_authenticated or \
+        not Employee.objects.get(user = request.user).privilege == Employee.Position.DOCTOR:
+        return HttpResponseNotFound(not_found_html)  
+    
+    appointment = Appointment.objects.get(id = appointment_id)
+
+    if request.method == 'POST':
+        form = AppointmentResultsForm(request.POST)
+        if(form.is_valid()):
+            appointment.results = form.cleaned_data['results']
+            appointment.save()
+            return HttpResponseRedirect(reverse('clinic:doctor',
+                args=(appointment.doctor.user.username,)))
+
+    form = AppointmentResultsForm(initial = {
+        'results': appointment.results,
+        'patient': appointment.patient,
+        'treatment': appointment.treatment,
+        'date': appointment.date,
+        'time': appointment.get_time_display(),
+        'informations': appointment.treatment.informations
+    })
+
+    return render(request, 'clinic/doctor_appointment.html',
+        {'form':form, 'appointment':appointment})
+
+def doctor(request, login):
+    if not request.user.is_authenticated or \
+            not Employee.objects.get(user = request.user).privilege == Employee.Position.DOCTOR:
+            return HttpResponseNotFound(not_found_html)
+
+    
+    user = User.objects.get(username = login)
+    employee = Employee.objects.get(user=user)
+
+    today_appointments = list(Appointment.objects.all().filter(doctor = employee)
+    .filter(date = datetime.date.today()))
+
+    return render(request, 'clinic/doctor.html', {'doctor': employee, 'today_appointments':today_appointments})
+
+    
 
 def receptionist(request):
     if not request.user.is_authenticated or \

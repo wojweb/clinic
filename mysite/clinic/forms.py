@@ -193,7 +193,7 @@ class NewAppointmentForm(forms.Form):
 
 
 class NewAppointmentFormTime(forms.Form):
-    doctor = DoctorModelChoiceField(queryset=None, widget=forms.TextInput(
+    doctor = DoctorModelChoiceField(queryset=None, to_field_name='last_name', widget=forms.TextInput(
         attrs={'readonly':'True', 'class':'form-control-plaintext'}
     ))
     treatment = forms.ModelChoiceField(queryset=None, to_field_name='name', widget=forms.TextInput(
@@ -209,7 +209,7 @@ class NewAppointmentFormTime(forms.Form):
     def __init__(self, time_choices, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['treatment'].queryset = Treatment.objects.all()
-        self.fields['doctor'].queryset = Employee.objects.all().filter(privilege = 'doctor')
+        self.fields['doctor'].queryset = Employee.objects.all()
         self.fields['time'].choices = time_choices
 
 
@@ -237,3 +237,23 @@ class AppointmentReadOnlyForm(forms.Form):
     def mark_results_as_empty(self):
         self.fields['results'].widget.attrs.update({'class':'form-control'})        
 
+class AppointmentResultsForm(forms.Form):
+
+    patient = forms.CharField(max_length = 64, widget=forms.TextInput(
+        attrs={'readonly':'True', 'class':'form-control-plaintext'}
+    ))
+    treatment = forms.CharField(max_length = 64, widget=forms.TextInput(
+        attrs={'readonly':'True', 'class':'form-control-plaintext'}
+    ))
+    date = forms.CharField(max_length = 64, widget=forms.TextInput(
+        attrs={'readonly':'True', 'class':'form-control-plaintext'}
+    ))
+    time = forms.CharField(max_length = 64, widget=forms.TextInput(
+        attrs={'readonly':'True', 'class':'form-control-plaintext'}
+    ))
+    informations = forms.CharField(max_length=100, widget=forms.TextInput(
+        attrs={'readonly':'True', 'class':'form-control-plaintext'}
+    ))
+    results = forms.CharField(max_length = 64, widget=forms.Textarea(
+        attrs={'class':'form-control', 'rows':'5'}
+    ))
